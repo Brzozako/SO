@@ -1,0 +1,34 @@
+#!/bin/bash
+
+case "$1" in
+    "-l")
+        # Dla opcji -l: informacje o modułach ładowalnych
+        module_list=$(lsmod | tail -n +2 | awk '{print $1}')
+
+        for module in $module_list; do
+            module_name=$module
+            module_users=$(lsmod | grep -E "\s$module\s" | wc -l)
+            using_modules=$(lsmod | grep -v "$module" | grep -E "\s$module_name\s" | awk '{printf "%s, ", $1}' | sed 's/, $//')
+
+            echo "$module_name $module_users $using_modules"
+        done | sort
+        ;;
+
+    "-b")
+        # Dla opcji -b: informacje o modułach wbudowanych
+        module_list=$(ls /sys/module/ | grep -vE 'build|init')
+
+        for module in $module_list; do
+            module_name=$module
+            module_params=$(ls /sys/module/$module/parameters/ | tr '\n' ',' | sed 's/,$//')
+
+            echo "$module_name $module_params"
+        done | sort
+        ;;
+
+    *)
+        # Obsługa niepoprawnej opcji
+        echo "Użycie: $0 [-l | -b]"
+        exit 1
+        ;;
+esac
